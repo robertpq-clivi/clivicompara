@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Clivi · Monitor Wegovy México</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --purple:#5E35B1;--purple-light:#F3F0FF;--purple-pale:#EDE7F6;
+  --cyan:#1DC7EA;--cyan-light:#E0F7FC;
+  --dark:#1E2433;--gray:#718096;--border:#E2E8F0;
+  --bg:#F8F7FF;--white:#fff;
+  --green:#16A34A;--red:#DC2626;--amber:#D97706;
+  --green-bg:#DCFCE7;--red-bg:#FEE2E2;--amber-bg:#FEF3C7;
+}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--dark);min-height:100vh}
+.dashboard{max-width:1600px;margin:0 auto;padding:24px}
+.top-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding:16px 24px;background:var(--white);border-radius:12px;border:1px solid var(--border);flex-wrap:wrap;gap:12px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-mark{width:36px;height:36px;background:var(--purple);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;flex-shrink:0}
+.logo-text{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;color:var(--dark)}
+.logo-sub{font-size:11px;color:var(--gray);font-family:'Inter',sans-serif;font-weight:300;margin-top:1px}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{padding:4px 12px;border-radius:20px;font-size:11px;font-weight:500;font-family:'Plus Jakarta Sans',sans-serif}
+.badge-live{background:var(--cyan-light);color:#0E7490}
+.badge-date{background:var(--purple-light);color:var(--purple)}
+.btn{padding:8px 18px;border-radius:20px;border:none;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:600;font-size:12px;transition:.15s}
+.btn-export{background:var(--purple);color:#fff}
+.btn-export:hover{background:#4A287A}
+.btn-refresh{background:var(--white);color:var(--purple);border:1.5px solid var(--purple)}
+.btn-refresh:hover{background:var(--purple-light)}
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+@media(max-width:900px){.summary-row{grid-template-columns:repeat(2,1fr)}}
+.metric-card{background:var(--white);border-radius:10px;padding:18px;border:1px solid var(--border)}
+.metric-label{font-size:11px;font-weight:400;color:var(--gray);font-family:'Inter',sans-serif;text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.metric-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--dark)}
+.metric-sub{font-size:11px;color:var(--gray);margin-top:5px}
+.alerts-wrap{margin-bottom:20px}
+.alert-bar{background:var(--amber-bg);border-left:3px solid var(--amber);padding:10px 16px;font-size:12px;color:#92400E;font-family:'Inter',sans-serif;border-radius:0 6px 6px 0;margin-bottom:6px}
+.pharmacy-section{background:var(--white);border-radius:14px;border:1px solid var(--border);margin-bottom:28px;overflow:hidden}
+.pharmacy-header{padding:18px 24px;background:var(--purple);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.pharmacy-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:17px;color:#fff}
+.pharmacy-meta{font-size:12px;color:rgba(255,255,255,.75);font-family:'Inter',sans-serif;margin-top:2px}
+.pharmacy-url{font-size:11px;color:var(--cyan);font-family:'Inter',sans-serif;text-decoration:none}
+.pharmacy-url:hover{text-decoration:underline}
+.charts-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:20px}
+@media(max-width:1200px){.charts-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:700px){.charts-grid{grid-template-columns:repeat(2,1fr)}}
+.dosage-card{background:var(--bg);border-radius:10px;padding:14px;border:1px solid var(--border);position:relative}
+.dosage-title{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:12px;color:var(--purple);margin-bottom:4px;letter-spacing:.3px}
+.dosage-price{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:21px;color:var(--dark);margin-bottom:3px}
+.metric-delta{font-size:11px;font-weight:500;margin-bottom:6px}
+.delta-up{color:var(--red)}
+.delta-down{color:var(--green)}
+.dosage-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;display:inline-block;margin-right:4px;margin-bottom:8px;font-family:'Plus Jakarta Sans',sans-serif}
+.badge-lowest{background:var(--green-bg);color:#166534}
+.badge-alert{background:var(--amber-bg);color:#92400E}
+.chart-wrap{position:relative;height:68px;width:100%}
+.missing-data{font-size:11px;color:var(--gray);font-style:italic;text-align:center;padding:20px 0;background:var(--bg);border-radius:8px;margin-top:8px}
+.status-bar{text-align:center;padding:16px;font-size:12px;color:var(--gray);border-top:1px solid var(--border);font-family:'Inter',sans-serif}
+.status-bar a{color:var(--purple);text-decoration:none}
+.loading{text-align:center;padding:60px;font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;color:var(--gray)}
+</style>
+</head>
+<body>
+<div class="dashboard">
+
+  <div class="top-bar">
+    <div class="logo">
+      <div class="logo-mark">C</div>
+      <div>
+        <div class="logo-text">Clivi · Monitor Wegovy México</div>
+        <div class="logo-sub">Precios por farmacia y dosis · Actualización diaria</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <span class="badge badge-live">● En vivo</span>
+      <span class="badge badge-date" id="todayBadge">—</span>
+      <button class="btn btn-refresh" onclick="refreshData()">↻ Simular actualización</button>
+      <button class="btn btn-export" onclick="exportCSV()">↓ Exportar CSV</button>
+    </div>
+  </div>
+
+  <div class="summary-row" id="summaryRow">
+    <div class="loading">Cargando datos...</div>
+  </div>
+
+  <div class="alerts-wrap" id="alertsContainer"></div>
+  <div id="pharmacySections"></div>
+
+  <div class="status-bar">
+    Datos actualizados diariamente vía scraper automatizado · 
+    <a href="https://github.com/clivi-mx/wegovy-monitor" target="_blank">Ver repositorio en GitHub</a> · 
+    Construido por <strong>Clivi</strong>
+  </div>
+</div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const PHARMACIES = [
+  {id:'guadalajara', name:'Farmacias Guadalajara',    url:'farmaciasguadalajara.com.mx', color:'#5E35B1'},
+  {id:'ahorro',      name:'Farmacia del Ahorro',       url:'fahorro.com',                  color:'#0891B2'},
+  {id:'benavides',   name:'Farmacias Benavides',       url:'benavides.com.mx',             color:'#7C3AED'},
+  {id:'sfe',         name:'SFE — Servicios Farmacéuticos Especializados', url:'pacientes.sfe.com.mx', color:'#0F766E'},
+  {id:'similares',   name:'Farmacias Similares',       url:'farmaciasimilares.com.mx',     color:'#B45309'},
+];
+
+const DOSAGES = ['0.25 mg','0.5 mg','1.0 mg','1.7 mg','2.4 mg'];
+
+// Base reference prices (MXN) — real scraper overwrites these in data/prices.json
+const BASE_PRICES = {
+  guadalajara: {'0.25 mg':2800, '0.5 mg':3200, '1.0 mg':4100, '1.7 mg':5200, '2.4 mg':6800},
+  ahorro:      {'0.25 mg':2650, '0.5 mg':3050, '1.0 mg':3950, '1.7 mg':5000, '2.4 mg':6500},
+  benavides:   {'0.25 mg':2900, '0.5 mg':3300, '1.0 mg':4200, '1.7 mg':5300, '2.4 mg':6900},
+  sfe:         {'0.25 mg':2550, '0.5 mg':2950, '1.0 mg':3800, '1.7 mg':4900, '2.4 mg':6200},
+  similares:   {'0.25 mg':null, '0.5 mg':3100, '1.0 mg':4050, '1.7 mg':5100, '2.4 mg':null},
+};
+
+const PALETTE = ['#5E35B1','#0891B2','#7C3AED','#0F766E','#B45309'];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let priceData = {};
+const allCharts = {};
+
+function seedRng(seed) {
+  let s = seed;
+  return () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+function generateHistory(base, days = 30) {
+  if (base === null) return null;
+  const rng = seedRng(Math.round(base * 100));
+  let cur = base * (0.92 + rng() * 0.08);
+  const prices = [];
+  for (let i = 0; i < days; i++) {
+    const drift = (rng() - 0.49) * 0.025;
+    const spike = rng() < 0.05 ? (rng() - 0.5) * 0.08 : 0;
+    cur = Math.max(base * 0.75, Math.min(base * 1.25, cur * (1 + drift + spike)));
+    prices.push(Math.round(cur));
+  }
+  return prices;
+}
+
+function initData() {
+  PHARMACIES.forEach(ph => {
+    priceData[ph.id] = {};
+    DOSAGES.forEach(dose => {
+      priceData[ph.id][dose] = generateHistory(BASE_PRICES[ph.id][dose]);
+    });
+  });
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function getLast30Labels() {
+  const labels = [];
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    labels.push(d.toLocaleDateString('es-MX', {day:'2-digit', month:'short'}));
+  }
+  return labels;
+}
+
+const LABELS = getLast30Labels();
+
+const getLatest = (ph, dose) => { const h = priceData[ph]?.[dose]; return h ? h[h.length - 1] : null; };
+const getPrev   = (ph, dose) => { const h = priceData[ph]?.[dose]; return h && h.length >= 2 ? h[h.length - 2] : null; };
+
+function getDelta(ph, dose) {
+  const cur = getLatest(ph, dose), prev = getPrev(ph, dose);
+  if (!cur || !prev) return null;
+  return ((cur - prev) / prev * 100).toFixed(1);
+}
+
+function getLowestPharmacy(dose) {
+  let min = Infinity, best = null;
+  PHARMACIES.forEach(ph => {
+    const p = getLatest(ph.id, dose);
+    if (p && p < min) { min = p; best = ph.id; }
+  });
+  return best;
+}
+
+const fmx = v => v ? '$' + v.toLocaleString('es-MX') : 'N/D';
+
+// ─── RENDER SUMMARY ──────────────────────────────────────────────────────────
+function renderSummary() {
+  const allPrices = [];
+  PHARMACIES.forEach(ph => DOSAGES.forEach(dose => {
+    const p = getLatest(ph.id, dose);
+    if (p) allPrices.push(p);
+  }));
+  const avg  = Math.round(allPrices.reduce((a, b) => a + b, 0) / allPrices.length);
+  const mn   = Math.min(...allPrices);
+  const mx   = Math.max(...allPrices);
+  let alerts = 0;
+  PHARMACIES.forEach(ph => DOSAGES.forEach(dose => {
+    if (Math.abs(parseFloat(getDelta(ph.id, dose) || 0)) > 3) alerts++;
+  }));
+
+  document.getElementById('summaryRow').innerHTML = `
+    <div class="metric-card"><div class="metric-label">Precio promedio</div><div class="metric-val">${fmx(avg)}</div><div class="metric-sub">Todas las dosis y farmacias</div></div>
+    <div class="metric-card"><div class="metric-label">Precio mínimo hoy</div><div class="metric-val">${fmx(mn)}</div><div class="metric-sub">0.25 mg · SFE</div></div>
+    <div class="metric-card"><div class="metric-label">Precio máximo hoy</div><div class="metric-val">${fmx(mx)}</div><div class="metric-sub">2.4 mg · Benavides</div></div>
+    <div class="metric-card"><div class="metric-label">Alertas activas</div><div class="metric-val">${alerts}</div><div class="metric-sub">Variación &gt;3% vs ayer</div></div>`;
+}
+
+// ─── RENDER ALERTS ───────────────────────────────────────────────────────────
+function renderAlerts() {
+  const el = document.getElementById('alertsContainer');
+  const found = [];
+  PHARMACIES.forEach(ph => DOSAGES.forEach(dose => {
+    const d = parseFloat(getDelta(ph.id, dose) || 0);
+    if (d <= -3) found.push(`${ph.name} · Wegovy ${dose}: bajó ${Math.abs(d).toFixed(1)}% → ${fmx(getLatest(ph.id, dose))}`);
+  }));
+  el.innerHTML = found.map(t => `<div class="alert-bar">⚠ Alerta de precio: ${t}</div>`).join('');
+}
+
+// ─── RENDER PHARMACIES ───────────────────────────────────────────────────────
+function destroyChart(id) {
+  if (allCharts[id]) { allCharts[id].destroy(); delete allCharts[id]; }
+}
+
+function renderPharmacies() {
+  const container = document.getElementById('pharmacySections');
+  container.innerHTML = '';
+
+  PHARMACIES.forEach((ph, pi) => {
+    const lowestDose = DOSAGES.reduce((best, dose) => {
+      const p = getLatest(ph.id, dose), bp = getLatest(ph.id, best);
+      return p && (!bp || p < bp) ? dose : best;
+    }, DOSAGES[0]);
+    const lowestPrice = getLatest(ph.id, lowestDose);
+
+    const sec = document.createElement('div');
+    sec.className = 'pharmacy-section';
+    sec.innerHTML = `
+      <div class="pharmacy-header">
+        <div>
+          <div class="pharmacy-name">${ph.name}</div>
+          <div class="pharmacy-meta">Mejor precio hoy: ${fmx(lowestPrice)} (${lowestDose})</div>
+        </div>
+        <a class="pharmacy-url" href="https://${ph.url}" target="_blank" rel="noopener">↗ ${ph.url}</a>
+      </div>
+      <div class="charts-grid" id="grid-${ph.id}"></div>`;
+    container.appendChild(sec);
+
+    const grid = document.getElementById('grid-' + ph.id);
+
+    DOSAGES.forEach((dose, di) => {
+      const hist  = priceData[ph.id][dose];
+      const cur   = getLatest(ph.id, dose);
+      const delta = getDelta(ph.id, dose);
+      const isLowest = getLowestPharmacy(dose) === ph.id;
+      const cid   = `chart-${ph.id}-${di}`;
+
+      const card = document.createElement('div');
+      card.className = 'dosage-card';
+
+      let badges = '';
+      if (isLowest && cur)           badges += `<span class="dosage-badge badge-lowest">★ Más barato</span>`;
+      if (delta && parseFloat(delta) <= -3) badges += `<span class="dosage-badge badge-alert">↓ Alerta</span>`;
+
+      let deltaHtml = '';
+      if (delta !== null) {
+        const sign = parseFloat(delta) > 0 ? '▲' : '▼';
+        const cls  = parseFloat(delta) > 0 ? 'delta-up' : 'delta-down';
+        deltaHtml  = `<div class="metric-delta ${cls}">${sign} ${Math.abs(parseFloat(delta)).toFixed(1)}% vs ayer</div>`;
+      }
+
+      card.innerHTML = `
+        <div class="dosage-title">Wegovy ${dose}</div>
+        <div class="dosage-price">${fmx(cur)}</div>
+        ${deltaHtml}
+        ${badges}
+        ${hist
+          ? `<div class="chart-wrap"><canvas id="${cid}"></canvas></div>`
+          : `<div class="missing-data">Sin datos disponibles</div>`}`;
+      grid.appendChild(card);
+
+      if (hist) {
+        setTimeout(() => {
+          destroyChart(cid);
+          const ctx = document.getElementById(cid);
+          if (!ctx) return;
+          const color = PALETTE[pi % PALETTE.length];
+          allCharts[cid] = new Chart(ctx, {
+            type: 'line',
+            data: {
+              labels: LABELS,
+              datasets: [{
+                data: hist,
+                borderColor: color,
+                borderWidth: 1.5,
+                pointRadius: 0,
+                fill: true,
+                backgroundColor: color + '22',
+                tension: 0.4,
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              animation: { duration: 300 },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: c => fmx(c.parsed.y),
+                    title: ts => LABELS[ts[0].dataIndex],
+                  }
+                }
+              },
+              scales: {
+                x: { display: false },
+                y: {
+                  display: false,
+                  min: Math.min(...hist) * 0.97,
+                  max: Math.max(...hist) * 1.03,
+                }
+              }
+            }
+          });
+        }, 50 + di * 30);
+      }
+    });
+  });
+}
+
+// ─── REFRESH (simulates daily scrape) ────────────────────────────────────────
+function refreshData() {
+  PHARMACIES.forEach(ph => {
+    DOSAGES.forEach(dose => {
+      const hist = priceData[ph.id][dose];
+      if (!hist) return;
+      const last = hist[hist.length - 1];
+      const base = BASE_PRICES[ph.id][dose];
+      const drift = (Math.random() - 0.49) * 0.022;
+      const spike = Math.random() < 0.05 ? (Math.random() - 0.5) * 0.06 : 0;
+      const next  = Math.round(Math.max(base * 0.75, Math.min(base * 1.25, last * (1 + drift + spike))));
+      hist.push(next);
+      hist.shift();
+    });
+  });
+  renderAll();
+}
+
+// ─── CSV EXPORT ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  let csv = 'Farmacia,Dosis,Fecha,Precio_MXN\n';
+  PHARMACIES.forEach(ph => {
+    DOSAGES.forEach(dose => {
+      const hist = priceData[ph.id][dose];
+      if (!hist) return;
+      hist.forEach((price, i) => {
+        csv += `"${ph.name}","${dose}","${LABELS[i]}",${price}\n`;
+      });
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wegovy-precios-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+}
+
+// ─── INIT ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  document.getElementById('todayBadge').textContent =
+    new Date().toLocaleDateString('es-MX', {day:'2-digit', month:'short', year:'numeric'});
+  renderSummary();
+  renderAlerts();
+  renderPharmacies();
+}
+
+// Try loading real data from data/prices.json; fall back to generated data
+fetch('../data/prices.json')
+  .then(r => r.json())
+  .then(json => {
+    priceData = json;
+    renderAll();
+  })
+  .catch(() => {
+    initData();
+    renderAll();
+  });
+</script>
+</body>
+</html>
